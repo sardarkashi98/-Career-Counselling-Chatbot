@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Counseling Assistant</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #e3f2fd;
+    }
+
+    .chat-container {
+      max-width: 420px;
+      height: 100vh;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      background-color: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-header {
+      background-color: #00796b;
+      color: #ffffff;
+      padding: 16px;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      border-bottom: 2px solid #004d40;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background-color: #f9fbfd;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .user-message {
+      align-self: flex-end;
+      background-color: #0288d1;
+      color: #fff;
+      border-bottom-right-radius: 0;
+    }
+
+    .bot-message {
+      align-self: flex-start;
+      background-color: #37474f;
+      color: #fff;
+      border-bottom-left-radius: 0;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background-color: #ffffff;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .chat-input button {
+      margin-left: 8px;
+      background-color: #00796b;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .chat-input button:hover {
+      background-color: #004d40;
+    }
+  </style>
+</head>
+<body>
+<div class="chat-container">
+  <div class="chat-header">Student Counseling Assistant</div>
+  <div class="chat-messages" id="chat-messages">
+    <div class="message bot-message">
+      Hello! I'm your assistant 🧠<br>
+      Ask me about mental health, study tips, or careers.
+    </div>
+  </div>
+  <div class="chat-input">
+    <input type="text" id="user-input" placeholder="Ask me anything..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const API_KEY = "AIzaSyCse3_n1LdTaSHKXuN-kyTw9QRxX2OInzc"; // Replace with your real key
+
+  const customPrompt =
+    "You are a student counseling assistant. Provide short, friendly, and helpful answers (under 60 words). Topics: mental health, academic stress, study habits, career guidance. Avoid long explanations. Keep it clear, comforting, and short.";
+
+  async function sendMessage() {
+    const input = document.getElementById("user-input");
+    const userText = input.value.trim();
+    if (!userText) return;
+
+    const chatBox = document.getElementById("chat-messages");
+
+    const userMsgElem = document.createElement("div");
+    userMsgElem.className = "message user-message";
+    userMsgElem.textContent = userText;
+    chatBox.appendChild(userMsgElem);
+
+    input.value = "";
+
+    const botTyping = document.createElement("div");
+    botTyping.className = "message bot-message";
+    botTyping.textContent = "Typing...";
+    chatBox.appendChild(botTyping);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: `${customPrompt}\n\nUser: ${userText}` }]
+            }]
+          })
+        }
+      );
+
+      const data = await res.json();
+      let reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I didn’t get that.";
+
+      // Trim if overly long
+      if (reply.length > 400) {
+        reply = reply.substring(0, 400).trim() + "...";
+      }
+
+      botTyping.textContent = reply;
+    } catch (err) {
+      botTyping.textContent = "Error: Couldn't reach Gemini.";
+      console.error(err);
+    }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+</script>
+</body>
+</html>
